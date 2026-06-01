@@ -245,7 +245,22 @@ app.delete("/family/:id", verifyToken, async (req, res) => {
     res.status(500).json({ message: "Error deleting member" });
   }
 });
-
+// SAVE FAMILY TREE
+app.put("/family/:id/tree", verifyToken, async (req, res) => {
+  try {
+    const updated = await FamilyMember.findByIdAndUpdate(
+      req.params.id,
+      {
+        treeNodes: req.body.treeNodes,
+        treeConnections: req.body.treeConnections
+      },
+      { new: true }
+    );
+    res.json({ message: "Tree saved", data: updated });
+  } catch (error) {
+    res.status(500).json({ message: "Error saving tree" });
+  }
+});
 // ─────────────────────────────────────────
 // START SERVER
 // ─────────────────────────────────────────
