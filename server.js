@@ -235,6 +235,15 @@ app.put("/family/:id", verifyToken, upload.single("image"), async (req, res) => 
     res.status(500).json({ message: "Error updating member" });
   }
 });
+// UPLOAD IMAGE (admin only)
+app.post("/upload", verifyToken, upload.single("image"), async (req, res) => {
+  try {
+    const imageUrl = req.file.path;
+    res.json({ url: imageUrl });
+  } catch (error) {
+    res.status(500).json({ message: "Upload failed" });
+  }
+});
 
 // Delete family member (admin only)
 app.delete("/family/:id", verifyToken, async (req, res) => {
