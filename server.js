@@ -270,6 +270,92 @@ app.put("/family/:id/tree", verifyToken, async (req, res) => {
     res.status(500).json({ message: "Error saving tree" });
   }
 });
+const Vignesh = require("./models/Vignesh");
+
+// GET VIGNESH DATA
+app.get("/vignesh", async (req, res) => {
+  try {
+    let data = await Vignesh.findOne();
+    if (!data) {
+      data = await Vignesh.create({ name: "Vignesh" });
+    }
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching data" });
+  }
+});
+
+// UPDATE VIGNESH PROFILE (admin)
+app.put("/vignesh/profile", verifyToken, upload.single("profilePhoto"), async (req, res) => {
+  try {
+    let data = await Vignesh.findOne();
+    if (!data) data = new Vignesh({});
+    if (req.body.name) data.name = req.body.name;
+    if (req.body.tagline) data.tagline = req.body.tagline;
+    if (req.body.dob) data.dob = req.body.dob;
+    if (req.file) data.profilePhoto = req.file.path;
+    await data.save();
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ message: "Error updating profile" });
+  }
+});
+
+// ADD PHOTO (admin)
+app.post("/vignesh/photos", verifyToken, upload.single("image"), async (req, res) => {
+  try {
+    let data = await Vignesh.findOne();
+    if (!data) data = new Vignesh({});
+    data.photos.push({
+      url: req.file.path,
+      caption: req.body.caption || ""
+    });
+    await data.save();
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ message: "Error adding photo" });
+  }
+});
+
+// DELETE PHOTO (admin)
+app.delete("/vignesh/photos/:photoId", verifyToken, async (req, res) => {
+  try {
+    let data = await Vignesh.findOne();
+    data.photos = data.photos.filter(p => p._id.toString() !== req.params.photoId);
+    await data.save();
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting photo" });
+  }
+});
+
+// ADD MESSAGE (anyone)
+app.post("/vignesh/messages", async (req, res) => {
+  try {
+    let data = await Vignesh.findOne();
+    if (!data) data = new Vignesh({});
+    data.messages.push({
+      name: req.body.name,
+      message: req.body.message
+    });
+    await data.save();
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ message: "Error adding message" });
+  }
+});
+
+// DELETE MESSAGE (admin)
+app.delete("/vignesh/messages/:msgId", verifyToken, async (req, res) => {
+  try {
+    let data = await Vignesh.findOne();
+    data.messages = data.messages.filter(m => m._id.toString() !== req.params.msgId);
+    await data.save();
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting message" });
+  }
+});
 // ─────────────────────────────────────────
 // START SERVER
 // ─────────────────────────────────────────
