@@ -344,6 +344,125 @@ app.post("/vignesh/messages", async (req, res) => {
     res.status(500).json({ message: "Error adding message" });
   }
 });
+const Album = require("./models/Album");
+
+// GET ALL ALBUMS (public)
+app.get("/albums", async (req, res) => {
+  try {
+    const albums = await Album.find().select("slug name tagline profilePhoto coverColor dob");
+    res.json(albums);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching albums" });
+  }
+});
+
+// GET SINGLE ALBUM (public)
+app.get("/albums/:slug", async (req, res) => {
+  try {
+    const album = await Album.findOne({ slug: req.params.slug });
+    if (!album) return res.status(404).json({ message: "Album not found" });
+    res.json(album);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching album" });
+  }
+});
+
+// CREATE ALBUM (admin)
+app.post("/albums", verifyToken, upload.single("profilePhoto"), async (req, res) => {
+  try {
+    const slug = req.body.name.toLowerCase().replace(/\s+/g, "-");
+    const existing = await Album.findOne({ slug });
+    if (existing) return res.status(400).json({ message: "Album already exists" });
+    const album = new Album({
+      slug,
+      name: req.body.name,
+      tagline: req.body.tagline || "",
+      dob: req.body.dob || "",
+      coverColor: req.body.coverColor || "#6366f1",
+      profilePhoto: req.file ? req.file.path : ""
+    });
+    await album.save();
+    res.json({ message: "Album created", data: album });
+  } catch (error) {
+    res.status(500).json({ message: "Error creating album" });
+  }
+});
+
+// UPDATE ALBUM PROFILE (admin)
+app.put("/albums/:slug/profile", verifyToken, upload.single("profilePhoto"), async (req, res) => {
+  try {
+    const album = await Album.findOne({ slug: req.params.slug });
+    if (!album) return res.status(404).json({ message: "Not found" });
+    if (req.body.name) album.name = req.body.name;
+    if (req.body.tagline) album.tagline = req.body.tagline;
+    if (req.body.dob) album.dob = req.body.dob;
+    if (req.body.coverColor) album.coverColor = req.body.coverColor;
+    if (req.file) album.profilePhoto = req.file.path;
+    await album.save();
+    res.json(album);
+  } catch (error) {
+    res.status(500).json({ message: "Error updating album" });
+  }
+});
+
+// DELETE ALBUM (admin)
+app.delete("/albums/:slug", verifyToken, async (req, res) => {
+  try {
+    await Album.findOneAndDelete({ slug: req.params.slug });
+    res.json({ message: "Album deleted" });
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting album" });
+  }
+});
+
+// ADD PHOTO (admin)
+app.post("/albums/:slug/photos", verifyToken, upload.single("image"), async (req, res) => {
+  try {
+    const album = await Album.findOne({ slug: req.params.slug });
+    album.photos.push({ url: req.file.path, caption: req.body.caption || "", addedBy: "Admin" });
+    await album.save();
+    res.json(album);
+  } catch (error) {
+    res.status(500).json({ message: "Error adding photo" });
+  }
+});
+
+// DELETE PHOTO (admin)
+app.delete("/albums/:slug/photos/:photoId", verifyToken, async (req, res) => {
+  try {
+    const album = await Album.findOne({ slug: req.params.slug });
+    album.photos = album.photos.filter(p => p._id.toString() !== req.params.photoId);
+    await album.save();
+    res.json(album);
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting photo" });
+  }
+});
+
+// ADD MESSAGE (anyone in family)
+app.post("/albums/:slug/messages", async (req, res) => {
+  try {
+    const album = await Album.findOne({ slug: req.params.slug });
+    if (!album) return res.status(404).json({ message: "Not found" });
+    album.messages.push({ name: req.body.name, message: req.body.message });
+    await album.save();
+    res.json(album);
+  } catch (error) {
+    res.status(500).json({ message: "Error adding message" });
+  }
+});
+
+// DELETE MESSAGE (admin)
+app.delete("/albums/:slug/messages/:msgId", verifyToken, async (req, res) => {
+  try {
+    const album = await Album.findOne({ slug: req.params.slug });
+    album.messages = album.messages.filter(m => m._id.toString() !== req.params.msgId);
+    await album.save();
+    res.json(album);
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting message" });
+  }
+});
 
 // DELETE MESSAGE (admin)
 app.delete("/vignesh/messages/:msgId", verifyToken, async (req, res) => {
