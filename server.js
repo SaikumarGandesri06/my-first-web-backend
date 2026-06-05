@@ -356,6 +356,15 @@ app.delete("/vignesh/messages/:msgId", verifyToken, async (req, res) => {
     res.status(500).json({ message: "Error deleting message" });
   }
 });
+// KEEP ALIVE - ping every 14 minutes
+const https = require("https");
+setInterval(() => {
+  https.get("https://my-first-web-backend.onrender.com/", (res) => {
+    console.log(`Keep alive ping: ${res.statusCode}`);
+  }).on("error", (err) => {
+    console.log("Ping error:", err.message);
+  });
+}, 14 * 60 * 1000);
 // ─────────────────────────────────────────
 // START SERVER
 // ─────────────────────────────────────────
